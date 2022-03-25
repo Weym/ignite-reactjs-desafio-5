@@ -1,1 +1,23 @@
-// TODO
+.homeContainer {
+  width: 700px;
+  padding: 24px 0;
+}
+
+.article {
+  padding: 24px 0;
+}
+
+.loadMore {
+  margin: 40px 0 80px 0;
+
+  button {
+    background: none;
+    color: var(--magenta-100);
+    border: none;
+    padding: 0;
+    outline: inherit;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 22px;
+  }
+}
