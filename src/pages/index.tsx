@@ -13,6 +13,7 @@ import Header from '../components/Header';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import HomePosts from '../components/HomePosts';
 
 interface Post {
   uid?: string;
@@ -36,54 +37,13 @@ interface HomeProps {
 export default function Home({ posts }) {
   return (
     <div className={`${commonStyles.container} ${styles.homeContainer}`}>
-      <div>
-        <Header />
+      <Header />
+
+      <HomePosts posts={posts} />
+
+      <div className={styles.loadMore}>
+        <button>Carregar mais posts</button>
       </div>
-
-      <main>
-        {posts.map(post => {
-          const {
-            slug,
-            first_publication_date,
-            data: { author, title, subtitle },
-          } = post;
-          console.log(author, title);
-          return (
-            <article className={styles.article}>
-              <Link href={`/posts/${slug}`} key={slug}>
-                <a>
-                  <div>
-                    <h2 className={commonStyles.title}>{title}</h2>
-                    <p className={commonStyles.subtitle}>{subtitle}</p>
-                  </div>
-                  <div className={commonStyles.info}>
-                    <div>
-                      <FiCalendar color="#BBBBBB" />
-                      <span>
-                        {format(
-                          new Date(first_publication_date),
-                          'd MMM yyyy',
-                          {
-                            locale: ptBR,
-                          }
-                        )}
-                      </span>
-                    </div>
-                    <div>
-                      <FiUser color="#BBBBBB" />
-                      <span>{author}</span>
-                    </div>
-                  </div>
-                </a>
-              </Link>
-            </article>
-          );
-        })}
-
-        <div className={styles.loadMore}>
-          <button>Carregar mais posts</button>
-        </div>
-      </main>
     </div>
   );
 }
@@ -105,7 +65,6 @@ export const getStaticProps: GetStaticProps = async () => {
       },
     };
   });
-  console.log(new Date());
 
   return { props: { posts } };
 };
