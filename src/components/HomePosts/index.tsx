@@ -2,15 +2,12 @@ import Link from 'next/link';
 
 import { FiCalendar, FiUser } from 'react-icons/fi';
 
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
-
 import commonStyles from '../../styles/common.module.scss';
 import styles from './homeposts.module.scss';
 
-interface Posts {
-  slug: string;
-  first_publication_date: string;
+interface Post {
+  uid?: string;
+  first_publication_date: string | null;
   data: {
     title: string;
     subtitle: string;
@@ -19,7 +16,7 @@ interface Posts {
 }
 
 interface HomePostsProps {
-  posts: Posts[];
+  posts: Post[];
 }
 
 export default function HomePosts({ posts }: HomePostsProps) {
@@ -27,13 +24,13 @@ export default function HomePosts({ posts }: HomePostsProps) {
     <main>
       {posts.map(post => {
         const {
-          slug,
+          uid,
           first_publication_date,
           data: { author, title, subtitle },
         } = post;
         return (
-          <article className={styles.article}>
-            <Link href={`/posts/${slug}`} key={slug}>
+          <article className={styles.article} key={uid}>
+            <Link href={`/posts/${uid}`} key={uid}>
               <a>
                 <div>
                   <h2 className={commonStyles.title}>{title}</h2>
@@ -42,11 +39,7 @@ export default function HomePosts({ posts }: HomePostsProps) {
                 <div className={commonStyles.info}>
                   <div>
                     <FiCalendar color="#BBBBBB" />
-                    <span>
-                      {format(new Date(first_publication_date), 'd MMM yyyy', {
-                        locale: ptBR,
-                      })}
-                    </span>
+                    <span>{first_publication_date}</span>
                   </div>
                   <div>
                     <FiUser color="#BBBBBB" />
