@@ -1,7 +1,5 @@
+import { useState } from 'react';
 import { GetStaticProps } from 'next';
-import Link from 'next/link';
-
-import { FiCalendar, FiUser } from 'react-icons/fi';
 
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
@@ -10,10 +8,10 @@ import Prismic from '@prismicio/client';
 import { getPrismicClient } from '../services/prismic';
 
 import Header from '../components/Header';
+import HomePosts from '../components/HomePosts';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import HomePosts from '../components/HomePosts';
 
 interface Post {
   uid?: string;
@@ -34,29 +32,60 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({ posts }) {
+export default function Home({
+  postsPagination: { results, next_page },
+}: HomeProps) {
+  const [nextPage, setNextPage] = useState(next_page);
+  const [posts, setPosts] = useState<Post[]>(formatPostsDate(results));
+
+  async function handleNextPage(): Promise<void> {
+    const response = await fetch(nextPage);
+    const responseData = await response.json();
+
+    const nextPagePosts = mapResponseFromPrismic(responseData);
+    const formatedNextPagePosts = formatPostsDate(nextPagePosts);
+
+    setPosts([...posts, ...formatedNextPagePosts]);
+    setNextPage(responseData.next_page);
+  }
+
   return (
     <div className={`${commonStyles.container} ${styles.homeContainer}`}>
       <Header />
-
       <HomePosts posts={posts} />
 
-      <div className={styles.loadMore}>
-        <button>Carregar mais posts</button>
-      </div>
+      {nextPage && (
+        <div className={styles.loadMore}>
+          <button onClick={handleNextPage}>Carregar mais posts</button>
+        </div>
+      )}
     </div>
   );
 }
 
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
-  const postsResponse = await prismic.query([
-    Prismic.predicates.at('document.type', 'post'),
-  ]);
+  const response = await prismic.query(
+    [Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: ['post.title', 'post.content', 'post.author', 'post.subtitle'],
+      pageSize: 2,
+    }
+  );
 
-  const posts = postsResponse.results.map(post => {
+  const posts = mapResponseFromPrismic(response);
+
+  return {
+    props: {
+      postsPagination: { results: posts, next_page: response.next_page },
+    },
+  };
+};
+
+function mapResponseFromPrismic(response) {
+  return response.results.map(post => {
     return {
-      slug: post.uid,
+      uid: post.uid,
       first_publication_date: post.first_publication_date,
       data: {
         author: post.data.author,
@@ -65,6 +94,17 @@ export const getStaticProps: GetStaticProps = async () => {
       },
     };
   });
+}
 
-  return { props: { posts } };
-};
+function formatPostsDate(posts: Post[]) {
+  return posts.map(post => {
+    const formatedDate = format(
+      new Date(post.first_publication_date),
+      'd MMM yyyy',
+      {
+        locale: ptBR,
+      }
+    );
+    return { ...post, first_publication_date: formatedDate };
+  });
+}
