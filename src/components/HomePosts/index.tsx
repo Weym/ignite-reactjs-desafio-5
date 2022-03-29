@@ -30,7 +30,7 @@ export default function HomePosts({ posts }: HomePostsProps) {
         } = post;
         return (
           <article className={styles.article} key={uid}>
-            <Link href={`/posts/${uid}`} key={uid}>
+            <Link href={`/post/${uid}`} key={uid}>
               <a>
                 <div>
                   <h2 className={commonStyles.title}>{title}</h2>
