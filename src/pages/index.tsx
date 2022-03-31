@@ -12,6 +12,7 @@ import HomePosts from '../components/HomePosts';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import { formatDate } from '../utils/posts';
 
 interface Post {
   uid?: string;
@@ -35,18 +36,16 @@ interface HomeProps {
 export default function Home({
   postsPagination: { results, next_page },
 }: HomeProps) {
-  const [nextPage, setNextPage] = useState(next_page);
+  const [nextPage, setNextPage] = useState<string>(next_page);
   const [posts, setPosts] = useState<Post[]>(formatPostsDate(results));
 
   async function handleNextPage(): Promise<void> {
-    const response = await fetch(nextPage);
-    const responseData = await response.json();
+    const { postsResponse, nextPageResponse } = await getPostsFromPrismic(
+      nextPage
+    );
 
-    const nextPagePosts = mapResponseFromPrismic(responseData);
-    const formatedNextPagePosts = formatPostsDate(nextPagePosts);
-
-    setPosts([...posts, ...formatedNextPagePosts]);
-    setNextPage(responseData.next_page);
+    setPosts([...posts, ...postsResponse]);
+    setNextPage(nextPageResponse);
   }
 
   return (
@@ -73,7 +72,7 @@ export const getStaticProps: GetStaticProps = async () => {
     }
   );
 
-  const posts = mapResponseFromPrismic(response);
+  const posts = mapPrismicResponse(response);
 
   return {
     props: {
@@ -82,7 +81,27 @@ export const getStaticProps: GetStaticProps = async () => {
   };
 };
 
-function mapResponseFromPrismic(response) {
+async function getPostsFromPrismic(
+  nextPage: string
+): Promise<{ postsResponse: Post[]; nextPageResponse: string }> {
+  const response = await fetch(nextPage);
+  const responseData = await response.json();
+
+  const nextPagePosts = mapPrismicResponse(responseData);
+  const formatedNextPagePosts = formatPostsDate(nextPagePosts);
+
+  // nextPagePosts.map(post => {
+  //   const formatedDate = formatDate(post.first_publication_date);
+  //   return { ...post, first_publication_date: formatedDate };
+  // });
+
+  return {
+    postsResponse: formatedNextPagePosts,
+    nextPageResponse: responseData.next_page,
+  };
+}
+
+function mapPrismicResponse(response): Post[] {
   return response.results.map(post => {
     return {
       uid: post.uid,
@@ -98,13 +117,7 @@ function mapResponseFromPrismic(response) {
 
 function formatPostsDate(posts: Post[]) {
   return posts.map(post => {
-    const formatedDate = format(
-      new Date(post.first_publication_date),
-      'd MMM yyyy',
-      {
-        locale: ptBR,
-      }
-    );
+    const formatedDate = formatDate(post.first_publication_date);
     return { ...post, first_publication_date: formatedDate };
   });
 }

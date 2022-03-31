@@ -12,7 +12,7 @@ import styles from './post.module.scss';
 import Header from '../../components/Header';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDate } from '../../utils/posts';
 
 interface Post {
   first_publication_date: string | null;
@@ -51,11 +51,8 @@ export default function Post({ post }: PostProps) {
 
   return (
     <>
-      <Head>
-        <title>{post.data.title}</title>
-      </Head>
       <div className={commonStyles.container}>
-        <Header />
+        <Header title={post.data.title} />
       </div>
       <article>
         {post.data.banner.url && (
@@ -137,10 +134,3 @@ export const getStaticProps: GetStaticProps = async context => {
 
   return { props: { post } };
 };
-
-function formatDate(date: string): string {
-  const formatedDate = format(new Date(date), 'd MMM yyyy', {
-    locale: ptBR,
-  });
-  return formatedDate;
-}
