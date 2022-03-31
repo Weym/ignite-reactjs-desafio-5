@@ -1,3 +1,5 @@
+import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { Container } from 'next/app';
 import { RichText } from 'prismic-dom';
@@ -7,6 +9,10 @@ import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
+import Header from '../../components/Header';
+import { FiCalendar, FiUser } from 'react-icons/fi';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Post {
   first_publication_date: string | null;
@@ -30,10 +36,78 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps) {
-  return <div>hi</div>;
+  const router = useRouter();
+  const estimatedReadingTime = post.data.content.reduce(
+    (sumTotalTime, content) => {
+      const numberOfWords = RichText.asText(content.body).split(/\S+/g).length;
+      return Math.ceil(sumTotalTime + numberOfWords / 200);
+    },
+    0
+  );
+
+  if (router.isFallback) {
+    return <h2>Carregando...</h2>;
+  }
+
+  return (
+    <>
+      <Head>
+        <title>{post.data.title}</title>
+      </Head>
+      <div className={commonStyles.container}>
+        <Header />
+      </div>
+      <article>
+        {post.data.banner.url && (
+          <div className={styles.banner}>
+            <img
+              className={styles.banner}
+              height="400"
+              src={post.data.banner.url}
+              alt={post.data.title}
+            />
+          </div>
+        )}
+        <div className={`${styles.postContainer} ${commonStyles.container}`}>
+          <h1 className={styles.postTitle}>{post.data.title}</h1>
+
+          <div className={commonStyles.info}>
+            <div>
+              <FiCalendar color="#BBBBBB" />
+              <span>{formatDate(post.first_publication_date)}</span>
+            </div>
+            <div>
+              <FiUser color="#BBBBBB" />
+              <span>{post.data.author}</span>
+            </div>
+            <div>
+              <FiCalendar color="#BBBBBB" />
+              <span>{estimatedReadingTime} min</span>
+            </div>
+          </div>
+          {post.data.content.map(content => {
+            return (
+              <div key={content.heading}>
+                <h2>{content.heading}</h2>
+                <div
+                  className={styles.postBody}
+                  dangerouslySetInnerHTML={{
+                    __html: RichText.asHtml(content.body),
+                  }}
+                />
+              </div>
+            );
+          })}
+
+          <div className={styles.info}></div>
+          <div className={styles.content}></div>
+        </div>
+      </article>
+    </>
+  );
 }
 
-export const getStaticPaths = async () => {
+export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient();
   const posts = await prismic.query([
     Prismic.predicates.at('document.type', 'post'),
@@ -49,32 +123,24 @@ export const getStaticPaths = async () => {
   };
 };
 
-export const getStaticProps = async context => {
+export const getStaticProps: GetStaticProps = async context => {
   const { slug } = context.params;
-  console.log(slug);
 
   const prismic = getPrismicClient();
   const response = await prismic.getByUID('post', String(slug), {});
 
   const post = {
+    uid: response.uid,
     first_publication_date: response.first_publication_date,
     data: response.data,
-    title: response.data.title,
-    banner: {
-      url: response.data.banner?.url,
-    },
-    author: response.data.author,
-    content: response.data.content.map(content => {
-      return {
-        heading: content.heading,
-        body: content.body.map(body => {
-          return {
-            text: body.text,
-          };
-        }),
-      };
-    }),
   };
 
   return { props: { post } };
 };
+
+function formatDate(date: string): string {
+  const formatedDate = format(new Date(date), 'd MMM yyyy', {
+    locale: ptBR,
+  });
+  return formatedDate;
+}
