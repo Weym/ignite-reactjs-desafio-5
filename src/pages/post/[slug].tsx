@@ -105,10 +105,8 @@ export default function Post({ post }: PostProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const prismic = getPrismicClient();
-  const posts = await prismic.query([
-    Prismic.predicates.at('document.type', 'post'),
-  ]);
+  const prismic = getPrismicClient({});
+  const posts = await prismic.getByType('post');
 
   const slugs = posts.results.map(post => post.uid);
 
@@ -123,7 +121,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async context => {
   const { slug } = context.params;
 
-  const prismic = getPrismicClient();
+  const prismic = getPrismicClient({});
   const response = await prismic.getByUID('post', String(slug), {});
 
   const post = {

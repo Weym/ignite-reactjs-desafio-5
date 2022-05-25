@@ -63,14 +63,10 @@ export default function Home({
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const prismic = getPrismicClient();
-  const response = await prismic.query(
-    [Prismic.predicates.at('document.type', 'post')],
-    {
-      fetch: ['post.title', 'post.content', 'post.author', 'post.subtitle'],
-      pageSize: 2,
-    }
-  );
+  const prismic = getPrismicClient({});
+  const response = await prismic.getByType('post', {
+    pageSize: 2,
+  });
 
   const posts = mapPrismicResponse(response);
 
